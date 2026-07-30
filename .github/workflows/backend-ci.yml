@@ -21,10 +21,8 @@ jobs:
           POSTGRES_USER: soter
           POSTGRES_PASSWORD: soter
           POSTGRES_DB: soter_test
-        ports:
-          - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U soter -d soter_test"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -50,7 +48,7 @@ jobs:
         working-directory: app/backend
         run: npx prisma migrate deploy
         env:
-          DATABASE_URL: postgresql://soter:soter@localhost:5432/soter_test
+          DATABASE_URL: postgresql://soter:soter@127.0.0.1:5432/soter_test
 
       - name: Lint
         run: pnpm --filter backend run lint
@@ -58,7 +56,7 @@ jobs:
       - name: Test
         run: pnpm --filter backend run test
         env:
-          DATABASE_URL: postgresql://soter:soter@localhost:5432/soter_test
+          DATABASE_URL: postgresql://soter:soter@127.0.0.1:5432/soter_test
 
       - name: Build
         run: pnpm --filter backend run build
