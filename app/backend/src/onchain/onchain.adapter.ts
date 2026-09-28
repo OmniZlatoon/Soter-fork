@@ -156,6 +156,22 @@ export interface ContractMetadata {
   timestamp: Date;
 }
 
+export interface ContractVersionParams {
+  contractId: string;
+}
+
+export interface MigrateContractParams extends ContractVersionParams {
+  newVersion: number;
+}
+
+export interface MigrateContractResult {
+  contractId: string;
+  transactionHash: string;
+  previousVersion: number;
+  newVersion: number;
+  timestamp: Date;
+}
+
 export interface PauseState {
   isPaused: boolean;
   timestamp: Date;
@@ -301,6 +317,10 @@ export interface OnchainAdapter {
   ): Promise<GetTokenBalanceResult>;
 
   getContractMetadata(): Promise<ContractMetadata>;
+  getContractVersion(params: ContractVersionParams): Promise<number>;
+  migrateContract(
+    params: MigrateContractParams,
+  ): Promise<MigrateContractResult>;
   getPauseState(): Promise<PauseState>;
   getFeeConfig(): Promise<FeeConfig>;
   getPackageSummary(packageId: string): Promise<PackageSummary>;

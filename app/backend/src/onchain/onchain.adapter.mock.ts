@@ -32,6 +32,9 @@ import {
   GetTransactionStatusResult,
   TxStatus,
   AidPackage,
+  ContractVersionParams,
+  MigrateContractParams,
+  MigrateContractResult,
 } from './onchain.adapter';
 import { createHash } from 'crypto';
 
@@ -70,6 +73,7 @@ export class MockOnchainAdapter implements OnchainAdapter {
   private readonly mockPackages = new Map<string, MockAidPackage>();
   private readonly mockEscrowAddress =
     'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF';
+  private readonly mockContractVersions = new Map<string, number>();
 
   /**
    * Generate a deterministic mock transaction hash from input
@@ -460,6 +464,28 @@ export class MockOnchainAdapter implements OnchainAdapter {
     return {
       version: '1.0.0',
       name: 'Mock Contract',
+      timestamp: new Date(),
+    };
+  }
+
+  async getContractVersion(params: ContractVersionParams): Promise<number> {
+    await Promise.resolve();
+    return this.mockContractVersions.get(params.contractId) ?? 1;
+  }
+
+  async migrateContract(
+    params: MigrateContractParams,
+  ): Promise<MigrateContractResult> {
+    await Promise.resolve();
+    const previousVersion = await this.getContractVersion(params);
+    this.mockContractVersions.set(params.contractId, params.newVersion);
+    return {
+      contractId: params.contractId,
+      transactionHash: this.generateMockHash(
+        `migrate-${params.contractId}-${params.newVersion}`,
+      ),
+      previousVersion,
+      newVersion: params.newVersion,
       timestamp: new Date(),
     };
   }

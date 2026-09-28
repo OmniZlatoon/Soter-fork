@@ -42,6 +42,9 @@ import {
   GetTransactionStatusParams,
   GetTransactionStatusResult,
   TxStatus,
+  ContractVersionParams,
+  MigrateContractParams,
+  MigrateContractResult,
 } from './onchain.adapter';
 import { SorobanErrorMapper } from './utils/soroban-error.mapper';
 import { withRetryTimeout } from './utils/retry-with-timeout';
@@ -171,10 +174,11 @@ export class SorobanAdapter implements OnchainAdapter {
     method: string,
     args: xdr.ScVal[],
     correlationId: string,
+    contractId = this.contractId,
   ): Promise<{ hash: string; result: any }> {
     const server = this.getServer();
     const kp = this.getKeypair();
-    const contract = new Contract(this.contractId);
+    const contract = new Contract(contractId);
     const pubKey = kp.publicKey();
 
     const account = await withRetryTimeout(
@@ -266,10 +270,11 @@ export class SorobanAdapter implements OnchainAdapter {
     method: string,
     args: xdr.ScVal[],
     correlationId: string,
+    contractId = this.contractId,
   ): Promise<unknown> {
     const server = this.getServer();
     const kp = this.getKeypair();
-    const contract = new Contract(this.contractId);
+    const contract = new Contract(contractId);
     const pubKey = kp.publicKey();
 
     const account = await withRetryTimeout(
@@ -719,6 +724,50 @@ export class SorobanAdapter implements OnchainAdapter {
     return {
       version: String((version as string | number) ?? '0'),
       name: 'Soroban AidEscrow Contract',
+      timestamp: new Date(),
+    };
+  }
+
+  async getContractVersion(params: ContractVersionParams): Promise<number> {
+    this.ensureConfigured();
+    const cid = this.correlationId();
+    const version = await this.simulateReadOnly(
+      'get_version',
+      [],
+      cid,
+      params.contractId,
+    );
+    const parsed = Number(version);
+    if (!Number.isInteger(parsed) || parsed < 0) {
+      throw new Error(
+        `Invalid contract version returned for ${params.contractId}`,
+      );
+    }
+    return parsed;
+  }
+
+  async migrateContract(
+    params: MigrateContractParams,
+  ): Promise<MigrateContractResult> {
+    this.ensureConfigured();
+    if (!Number.isInteger(params.newVersion) || params.newVersion <= 0) {
+      throw new Error('Migration target version must be a positive integer');
+    }
+    const cid = this.correlationId();
+    const previousVersion = await this.getContractVersion({
+      contractId: params.contractId,
+    });
+    const { hash } = await this.submitContractOp(
+      'migrate',
+      [this.scvU32(params.newVersion)],
+      cid,
+      params.contractId,
+    );
+    return {
+      contractId: params.contractId,
+      transactionHash: hash,
+      previousVersion,
+      newVersion: params.newVersion,
       timestamp: new Date(),
     };
   }

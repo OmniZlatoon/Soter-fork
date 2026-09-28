@@ -876,6 +876,7 @@ model DeploymentMetadata {
   commitSha    String?  // Git commit SHA of the code when deployed
   deployer     String?  // Address or ID of the deployer
   transactionHash String? // Hash of the deployment transaction
+  contractVersion Int? // Last on-chain contract version verified by the backend
   metadata     Json?    // Additional deployment metadata (environment variables, flags, etc.)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
